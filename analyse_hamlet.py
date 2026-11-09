@@ -1,9 +1,6 @@
 from pathlib import Path
 
 
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)
-
 def lire_piece(chemin):
     with open(chemin, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
@@ -82,12 +79,6 @@ def preparer_voix(acteurs):
     return {a: anglaises[i % len(anglaises)].id for i, a in enumerate(acteurs)}
 
 
-def lire_repliques(acteur, liste, voix_par_acteur):
-    engine.setProperty("voice", voix_par_acteur[acteur])
-    for replique in liste:
-        print(f"\n[{PERSONNAGES.get(acteur, acteur)}] {replique}")
-        engine.say(replique)
-    engine.runAndWait()
 
 
 acteurs = sorted(repliques, key=lambda a: len(repliques[a]), reverse=True)
