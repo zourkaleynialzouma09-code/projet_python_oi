@@ -11,3 +11,10 @@ def lire_repliques(phrase):
     #print(f"\n[{personnage.PERSONNAGES.get(acteur, acteur)}] {replique}")
     engine.say(phrase)
     engine.runAndWait()
+
+def preparer_voix(acteurs):
+    voices = engine.getProperty("voices")
+    anglaises = [v for v in voices if any("en" in str(l).lower() for l in v.languages)]
+    if not anglaises:
+        anglaises = voices
+    return {a: anglaises[i % len(anglaises)].id for i, a in enumerate(acteurs)}
