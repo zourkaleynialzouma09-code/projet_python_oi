@@ -1,101 +1,120 @@
-import re
-import sys
-import unicodedata
-from collections import Counter, defaultdict
 from pathlib import Path
-import pyttsx3
+
 
 engine = pyttsx3.init()
-
-
-PERSONNAGES = {
-    "Ham": "Hamlet", "Hor": "Horatio", "King": "Le Roi (Claudius)",
-    "Queen": "La Reine (Gertrude)", "Pol": "Polonius", "Laer": "Laertes",
-    "Oph": "Ophélie", "Ros": "Rosencrantz", "Guil": "Guildenstern",
-    "Clown": "Un fossoyeur", "Mar": "Marcellus", "Ber": "Bernardo",
-    "Fran": "Francisco", "Ghost": "Le Fantôme", "Rey": "Reynaldo",
-    "Osr": "Osric", "Capt": "Le capitaine norvégien", "Fort": "Fortinbras",
-    "Volt": "Voltemand", "Cor": "Cornelius", "Priest": "Le prêtre",
-    "Player": "Un comédien", "Gent": "Un gentilhomme", "Sailor": "Un marin",
-    "Mess": "Un messager", "Luc": "Lucianus", "Lord": "Un seigneur",
-    "Servant": "Un serviteur",
-}
-
+engine.setProperty('rate', 150)
 
 def lire_piece(chemin):
-    return Path(chemin).read_text(encoding="utf-8", errors="replace")
+    with open(chemin, "r", encoding="utf-8", errors="replace") as f:
+        return f.read()
 
-def compter(texte: str):
-    letters = {}
-    word = 0
-    letterBefore = False
-    for c in texte:
-        if c.lower() >= 'a' and c.lower() <= 'z':
-            letters[c.lower()] = letters.get(c.lower(), 0) + 1
-            letterBefore = True
-        elif (c == ' ' or c == '\n') and letterBefore:
-            word += 1
-            letterBefore = False
+def nettoyer(replique):
+    replique = re.sub(r"\[.*?\]", "", replique)
+    replique = re.sub(r"\(.*?\)", "", replique)
+    return re.sub(r"\s+", " ", replique).strip()
+
+texte = lire_piece("hamlet.txt")
+
+total_lettres = 0
+for caractere in texte:
+    if caractere.isalpha():
+        total_lettres += 1
+
+print("Nombre total de lettres dans la pièce :", total_lettres)
+
+occurences = {}
+
+for caractere in texte:
+    if caractere.isalpha():
+        lettre = caractere.lower()
+        if lettre in occurences:
+            occurences[lettre] += 1
         else:
-            letterBefore = False
-    return letters, word
+            occurences[lettre] = 1
 
+for lettre in sorted(occurences.keys()):
+    print(f"Lettre '{lettre}' : {occurences[lettre]} occurrences")
 
+mots = texte.split()
+print("Nombre de mots dans la pièce :", len(mots))
 
-def extraire_repliques(texte):
-    repliques = defaultdict(list)
-    personnage = None
+mots_propres = []
+for mot in texte.split():
+    mot = mot.strip(".,!?;:\"'()[]{}<>")
+    if mot:
+        mots_propres.append(mot.lower())
+
+print("Nombre de mots distincts dans la pièce :", len(set(mots_propres)))
+
+def recuperer_repliques(texte):
+    repliques = {}
+    acteur = None
+    piece_comencee = False
+
     for ligne in texte.splitlines():
-        correspondance = re.match(r"^\s*([A-Z][a-z]{1,8})\.\s*(.*)$", ligne)
-        if correspondance and correspondance.group(1) in PERSONNAGES:
-            personnage = correspondance.group(1)
-            contenu = correspondance.group(2).strip()
-            if contenu:
-                repliques[personnage].append(contenu)
-        elif personnage and ligne.strip():
-            # Ignore les indications de scène entre parenthèses.
-            contenu = ligne.strip()
-            if not re.match(r"^(Enter|Exit|Exeunt|[A-Z][a-z]+ Ghost\.)", contenu):
-                repliques[personnage].append(contenu)
+        if ligne.startswith("ACT I."):
+            piece_comencee = True
+        if not piece_comencee:
+            continue
+
+        debut = re.match(r"^ {2}([A-Z][a-z]{1,8})\.\s*(.*)$", ligne)
+        if debut:
+            acteur = debut.group(1)
+            repliques.setdefault(acteur, []).append(debut.group(2).strip())
+        elif re.match(r"^ {4}\S", ligne) and acteur:
+            repliques[acteur][-1] += " " + ligne.strip()
+    for acteur in repliques:
+        repliques[acteur] = [nettoyer(r) for r in repliques[acteur]]
+
     return repliques
 
+texte = lire_piece("hamlet.txt")
+repliques = recuperer_repliques(texte)
 
-def lire_a_haute_voix(nom, texte):
-    engine.say(f"{nom}. {texte}")
+for acteur, liste in sorted(repliques.items(), key=lambda x: len(x[1]), reverse=True):
+    print(f"{acteur} : {len(liste)} répliques")
+
+def preparer_voix(acteurs):
+    voices = engine.getProperty("voices")
+    anglaises = [v for v in voices if any("en" in str(l).lower() for l in v.languages)]
+    if not anglaises:
+        anglaises = voices
+    return {a: anglaises[i % len(anglaises)].id for i, a in enumerate(acteurs)}
+
+
+def lire_repliques(acteur, liste, voix_par_acteur):
+    engine.setProperty("voice", voix_par_acteur[acteur])
+    for replique in liste:
+        print(f"\n[{PERSONNAGES.get(acteur, acteur)}] {replique}")
+        engine.say(replique)
     engine.runAndWait()
 
 
-def main():
-    chemin = sys.argv[1] if len(sys.argv) > 1 else "hamlet.txt"
-    try:
-        texte = lire_piece(chemin)
-    except OSError:
-        print(f"Fichier introuvable : {chemin}")
-        print("Utilisation : python3 analyse_hamlet.py chemin/vers/hamlet.txt")
-        return
+acteurs = sorted(repliques, key=lambda a: len(repliques[a]), reverse=True)
+voix_par_acteur = preparer_voix(acteurs)
 
-    lettres, mots = compter(texte)
-    repliques = extraire_repliques(texte)
-    print(f"Nombre total de lettres : {sum(lettres.values())}")
-    print("Nombre d'occurrences de chaque lettre :")
-    for lettre, nombre in sorted(lettres.items()):
-        print(f"  {lettre} : {nombre}")
-    print(f"\nNombre de mots : {mots}")
-    print("\nRépliques par personnage :")
-    for cle, lignes in repliques.items():
-        print(f"  {PERSONNAGES[cle]} : {len(lignes)} lignes")
+while True:
+    print("\n--- Acteurs disponibles ---")
+    for a in acteurs:
+        print(f"{a:8} {PERSONNAGES.get(a, a):28} {len(repliques[a])} répliques")
 
-    while True:
-        choix = input("\nPersonnage à faire lire (nom ou Entrée pour arrêter) : ").strip()
-        if not choix:
-            break
-        cle = next((k for k, nom in PERSONNAGES.items()
-                    if choix.casefold() in (k.casefold(), nom.casefold())), None)
-        if cle not in repliques:
-            print("Personnage introuvable. Essaie Hamlet, Horatio, Ophélie, etc.")
-        else:
-            lire_a_haute_voix(PERSONNAGES[cle], " ".join(repliques[cle]))
+    saisie = input("\nQuel acteur ? (ex: Ham, ou 'q' pour quitter) : ").strip()
+    if saisie.lower() == "q":
+        break
 
+    choix = next((a for a in repliques if a.lower() == saisie.lower()), None)
+    if choix is None:
+        print("Acteur inconnu, choisis une abréviation de la liste.")
+        continue
 
-if __name__ == "__main__":
-    main()
+    nb = input("Combien de répliques ? (un nombre, ou 'tout') : ").strip().lower()
+    if nb == "tout":
+        liste = repliques[choix]
+    elif nb.isdigit():
+        liste = repliques[choix][: int(nb)]
+    else:
+        print("Réponse non comprise.")
+        continue
+
+    lire_repliques(choix, liste, voix_par_acteur)
+
