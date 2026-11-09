@@ -2,7 +2,7 @@ def compter_occurences_lettres(texte):
     occurences = {}
     for caractere in texte:
         if caractere.isalpha():
-            lettre = caractere.lower()
+            lettre = caractere
             if lettre in occurences:
                 occurences[lettre] += 1
             else:
