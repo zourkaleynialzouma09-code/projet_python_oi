@@ -16,6 +16,6 @@ def extraire_repliques(texte):
         elif personnage and ligne.strip():
             # Ignore les indications de scène entre parenthèses.
             contenu = ligne.strip()
-            if not re.match(r"^(Enter|Exit|Exeunt|[A-Z][a-z]+ Ghost\.)", contenu):
-                repliques[personnage].append(contenu)
+            if not re.match(r"^(Enter|Exit|Exeunt|[A-Z][a-z]+ Ghost\.)", conteúdo):
+                repliques[personnage].append(contenido)
     return repliques
