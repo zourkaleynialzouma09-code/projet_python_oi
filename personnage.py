@@ -10,3 +10,12 @@ PERSONNAGES = {
     "Mess": "Un messager", "Luc": "Lucianus", "Lord": "Un seigneur",
     "Servant": "Un serviteur",
 }
+
+def nom_complet(cle):
+    return PERSONNAGES.get(cle, cle)
+
+def trouver_cle(nom):
+    for cle, nom_complet in PERSONNAGES.items():
+        if nom_complet == nom:
+            return cle
+    return None
