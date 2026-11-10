@@ -1,7 +1,7 @@
 from collections import defaultdict
 import re
 
-import personnage
+from personnage import PERSONNAGES
 
 def extraire_repliques(texte):
     repliques = defaultdict(list)
