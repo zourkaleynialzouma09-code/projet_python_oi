@@ -1,16 +1,15 @@
 from pathlib import Path
 import re
+import lire_fichier
 import lire_repliques
 from personnage import PERSONNAGES
 import recuperer_repliques
 
 
-def lire_piece(chemin):
-    with open(chemin, "r", encoding="utf-8", errors="replace") as f:
-        return f.read()
 
 
-texte = lire_piece("hamlet.txt")
+
+texte = lire_fichier("hamlet.txt")
 
 total_lettres = 0
 for caractere in texte:

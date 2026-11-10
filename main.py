@@ -1,40 +1,91 @@
 import sys
-
 import comptage_mot
 import comptage_lettre
+import extraire_replique
+import lire_fichier
+# from lire_fichier import lire_piece
 from paramètre import CHEMIN_DEFAUT
 import recuperer_repliques
 import serveur
+import test_json
+import test_replique
+from trouver_cle import trouver_cle
 import tts 
-import personnage
+from personnage import PERSONNAGES
 from collections import Counter, defaultdict
+from flask import Flask, jsonify, request
+
+HOST, PORT = "127.0.0.1", 5000
+app = Flask(__name__)
+
+
+@app.get("/api/compter_lettres")
+def compter_lettres():
+    chemin_fichier = CHEMIN_DEFAUT
+    with open(chemin_fichier, "r", encoding="utf-8") as fichier:
+        texte = fichier.read()
+# contenu =str(lire_fichier("hamlet.txt"))
+# print(contenu)
+    print("Nombre total de lettres dans la pièce :", comptage_lettre.compter_lettres(texte))
+    return jsonify({"resultat" : comptage_lettre.compter_lettres(texte)})
+
+@app.get("/api/compter_mots")
+def compter_mots():
+    chemin_fichier = CHEMIN_DEFAUT
+    with open(chemin_fichier, "r", encoding="utf-8") as fichier:
+        texte = fichier.read()
+# contenu =str(lire_fichier("hamlet.txt"))
+# print(contenu)
+    print("Nombre total de mots dans la pièce :", comptage_mot.compter_mots(texte))
+    return jsonify({"resultat" : comptage_mot.compter_mots(texte)})
+
+
+
+
+
+
+citations = []
+
+
+
 
 def main():
-    chemin_fichier = lire_chemin()
+    
+    print("********* DEMARRAGE DU PROGRAMME ****************")
+    chemin_fichier = CHEMIN_DEFAUT
     with open(chemin_fichier, "r", encoding="utf-8") as fichier:
         texte = fichier.read()
 
-    repliques = recuperer_repliques.recuperer_repliques(texte)
-    occurences_lettres = comptage_lettre.compter_occurences_lettres(texte)
-    occurences_mots = comptage_mot.compter_occurences_mots(texte)
+    nb_lettres = comptage_lettre.compter_lettres(texte)
+    print(nb_lettres)
 
-    print("Occurrences de lettres :")
-    for lettre, occurence in sorted(occurences_lettres.items()):
-        print(f"{lettre}: {occurence}")
+    nb_mots = comptage_mot.compter_mots(texte)
+    print(nb_mots)
 
-    print("\nOccurrences de mots :")
-    for mot, occurence in sorted(occurences_mots.items()):
-        print(f"{mot}: {occurence}")
+    content = texte
+        # def test_replique(content):
+    for ligne in content.splitlines():
+        pos = ligne[:10].find(".")
+        if pos > 1:
+            cle = ligne[:pos].strip()
+            print(cle, "a dit :")
+            print("  ",ligne[pos:])
+            personnage = str(cle)
+            citations.append((personnage, ligne[pos:]))
+        else:
+            print(ligne)
 
-    serveur.demarrer_serveur(repliques)
+    # print(citations)
+    # print(json)
 
-def lire_chemin(argv=None):
-    """Retourne le chemin du fichier fourni en argument, ou le chemin par défaut."""
-    argv = sys.argv if argv is None else argv
-    return argv[1] if len(argv) > 1 else CHEMIN_DEFAUT
+    
+
+
+
 
 if __name__ == "__main__":
     main()
+    app.run(host=HOST, port=PORT)
 
 
-tts.lire_repliques("test de voix")
+# tts.lire_repliques("test de voix")
