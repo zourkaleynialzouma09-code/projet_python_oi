@@ -13,9 +13,11 @@ PERSONNAGES = {
 
 def nom_complet(cle):
     return PERSONNAGES.get(cle, cle)
+#Retourne le nom complet du personnage correspondant à la clé donnée. Si la clé n'est pas trouvée, elle retourne la clé elle-même.
 
 def trouver_cle(nom):
     for cle, nom_complet in PERSONNAGES.items():
         if nom_complet == nom:
             return cle
     return None
+#Retourne la clé correspondant au nom complet du personnage donné. Si le nom n'est pas trouvé, elle retourne None.
