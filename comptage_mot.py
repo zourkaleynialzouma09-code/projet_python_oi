@@ -1,23 +1,14 @@
-occurences = {}
-
-for caractere in texte:
-    if caractere.isalpha():
-        lettre = caractere.lower()
-        if lettre in occurences:
-            occurences[lettre] += 1
+def compter_mots(texte: str) -> int:
+    """Compte les mots : une suite de lettres terminée par un espace ou un retour à la ligne."""
+    mots = 0
+    lettre_avant = False
+    for c in texte:
+        c = c.lower()
+        if "a" <= c <= "z":
+            lettre_avant = True
+        elif (c == " " or c == "\n") and lettre_avant:
+            mots += 1
+            lettre_avant = False
         else:
-            occurences[lettre] = 1
-
-for lettre in sorted(occurences.keys()):
-    print(f"Lettre '{lettre}' : {occurences[lettre]} occurrences")
-
-mots = texte.split()
-print("Nombre de mots dans la pièce :", len(mots))
-
-mots_propres = []
-for mot in texte.split():
-    mot = mot.strip(".,!?;:\"'()[]{}<>")
-    if mot:
-        mots_propres.append(mot.lower())
-
-print("Nombre de mots distincts dans la pièce :", len(set(mots_propres)))
+            lettre_avant = False
+    return mots
